@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>आज का खाना</title>
+<meta name="theme-color" content="#14181C">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --ground:#14181C; --ground-2:#1C2228; --ink:#FFFFFF; --ink-soft:#A9B4BE; --line:#2A333B;
+    --c-breakfast:#E08A0C; --c-tiffin:#0E7C6B; --c-home:#2C6CB4;
+    --c-dinner-a:#6D44A8; --c-dinner-b:#B5354B; --c-daily:#4A5A1F; --today:#1FA971;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: light){ :root{ color-scheme: dark; } }
+  *,*::before,*::after{box-sizing:inherit}
+  html,body{margin:0;background:var(--ground);}
+  body{
+    font-family:'Noto Sans Devanagari','Noto Sans',system-ui,sans-serif;
+    color:var(--ink); -webkit-tap-highlight-color:transparent;
+    padding:0 12px 28px; max-width:620px; margin:0 auto;
+  }
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:4px solid #FFD84D;outline-offset:3px}
+
+  .daybar{display:grid;grid-template-columns:76px 1fr 76px;gap:10px;padding:14px 0 10px}
+  .arrow{background:var(--ground-2);border:2px solid var(--line);border-radius:20px;
+    font-size:34px;line-height:1;display:flex;align-items:center;justify-content:center;min-height:104px}
+  .arrow:active{background:#2B343D}
+  .daycard{background:var(--ground-2);border:2px solid var(--line);border-radius:20px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:104px;padding:6px;position:relative}
+  .daycard.is-today{border-color:var(--today);background:#16302A}
+  .dayname{font-size:34px;font-weight:800;line-height:1.1}
+  .daydate{font-size:19px;font-weight:600;color:var(--ink-soft);margin-top:2px}
+  .todaydot{position:absolute;top:8px;right:12px;width:14px;height:14px;border-radius:50%;
+    background:var(--today);display:none}
+  .daycard.is-today .todaydot{display:block}
+
+  .playall{width:100%;display:flex;align-items:center;justify-content:center;gap:16px;
+    background:var(--today);color:#06160F;border-radius:22px;min-height:96px;
+    font-size:30px;font-weight:800;margin-bottom:18px}
+  .playall .ico{font-size:40px;line-height:1}
+  .playall:active{filter:brightness(.9)}
+  .playall.speaking{background:#FFD84D}
+  .playall[disabled]{background:#2B343D;color:var(--ink-soft)}
+
+  .band{width:100%;display:grid;grid-template-columns:106px 1fr 58px;align-items:center;gap:12px;
+    border-radius:22px;padding:12px 14px 12px 10px;margin-bottom:12px;min-height:120px;overflow:hidden}
+  .band:active{filter:brightness(1.15)}
+  .band .pic{position:relative;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.22);border-radius:18px;height:96px;overflow:hidden}
+  .band .pic .emoji{font-size:48px;line-height:1}
+  .band .pic .photo{width:100%;height:100%;object-fit:cover;display:block}
+  .band .badge{position:absolute;right:4px;bottom:4px;width:34px;height:34px;border-radius:50%;
+    object-fit:cover;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;
+    font-size:21px;line-height:1;border:2px solid rgba(255,255,255,.85)}
+  .band .txt{text-align:right;min-width:0}
+  .band .label{font-size:25px;font-weight:800;line-height:1.2;display:block}
+  .band .dish{font-size:17px;line-height:1.35;opacity:.92;margin-top:4px;display:-webkit-box;
+    -webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .band .spk{font-size:34px;line-height:1;opacity:.85}
+  .band.speaking{box-shadow:inset 0 0 0 4px #FFD84D}
+  .b-breakfast{background:var(--c-breakfast);color:#1B1200}
+  .b-tiffin{background:var(--c-tiffin);color:#021713}
+  .b-home{background:var(--c-home);color:#02121F}
+  .b-dinner-a{background:var(--c-dinner-a);color:#120720}
+  .b-dinner-b{background:var(--c-dinner-b);color:#1E0409}
+  .b-daily{background:var(--c-daily);color:#0E1203}
+  .b-empty{background:var(--ground-2);border:2px dashed var(--line);color:var(--ink-soft);
+    justify-items:center;grid-template-columns:1fr;text-align:center}
+  .b-empty .label{font-size:22px}
+
+  .note{margin-top:18px;padding:14px 16px;border-radius:16px;background:#3A2410;
+    border:2px solid #7A4E1C;color:#FFD9A8;font-size:15px;line-height:1.5;display:none}
+  .note.show{display:block}
+  .stale{margin-top:10px;text-align:center;color:var(--ink-soft);font-size:14px;display:none}
+  .stale.show{display:block}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- =================================================================
+     PASTE YOUR TWO PUBLISHED CSV LINKS BETWEEN THE QUOTES BELOW.
+     Google Sheets > File > Share > Publish to web > pick the tab >
+     Comma-separated values (.csv) > Publish > copy the link.
+     Do it twice: once for the "Menu" tab, once for the "Icons" tab.
+     The Icons link is optional — without it you just get the emoji.
+     ================================================================= -->
+<script>
+const MENU_CSV_URL  = "";
+const ICONS_CSV_URL = "";
+</script>
+
+<div class="daybar">
+  <button class="arrow" id="prev" aria-label="पिछला दिन">◀</button>
+  <button class="daycard" id="daycard" aria-label="आज पर वापस जाएँ">
+    <span class="todaydot"></span>
+    <span class="dayname" id="dayname">—</span>
+    <span class="daydate" id="daydate"></span>
+  </button>
+  <button class="arrow" id="next" aria-label="अगला दिन">▶</button>
+</div>
+
+<button class="playall" id="playall">
+  <span class="ico">🔊</span><span id="playall-txt">पूरा दिन सुनें</span>
+</button>
+
+<div id="bands"></div>
+<div class="stale" id="stale">📴 पुरानी जानकारी दिखाई जा रही है</div>
+
+<div class="note" id="note">
+  हिंदी आवाज़ नहीं मिली। फ़ोन में <b>Google Text-to-speech</b> खोलकर हिंदी आवाज़ डाउनलोड करें.<br>
+  <span style="opacity:.8">No Hindi voice installed — Settings › Accessibility › Text-to-speech
+  output › Google Speech Recognition &amp; Synthesis › Install voice data › हिन्दी.</span>
+</div>
+
+<script>
+const MEALS = [
+  {col:1, key:'breakfast',        cls:'b-breakfast', pic:'☕',  badge:'',             label:'नाश्ता'},
+  {col:2, key:'office lunch',     cls:'b-tiffin',    pic:'🍱', badge:'',             label:'ऑफिस का टिफिन'},
+  {col:3, key:'home lunch',       cls:'b-home',      pic:'🍽️', badge:'',             label:'घर का खाना'},
+  {col:4, key:'dinner - utkarsh', cls:'b-dinner-a',  pic:'🌙', badge:'badge - utkarsh', label:'रात का खाना — उत्कर्ष जी'},
+  {col:5, key:'dinner - nitya',   cls:'b-dinner-b',  pic:'🌙', badge:'badge - nitya',   label:'रात का खाना — नित्या जी'},
+  {col:6, key:'daily items',      cls:'b-daily',     pic:'🥥', badge:'',             label:'रोज़ का सामान'}
+];
+const BADGE_EMOJI = {'badge - utkarsh':'👨', 'badge - nitya':'👩'};
+const MEAL_KEYS = new Set(MEALS.map(m => m.key).concat(Object.keys(BADGE_EMOJI)));
+const DAYS_HI = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
+const CACHE_KEY = 'menu-cache-v2';
+function esc(s){ return String(s).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------------- CSV parsing (handles quotes and in-cell newlines) ------ */
+function parseCSV(text){
+  const rows = []; let row = [], field = '', q = false;
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(q){
+      if(ch === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else q = false; }
+      else field += ch;
+    } else if(ch === '"'){ q = true; }
+    else if(ch === ','){ row.push(field); field = ''; }
+    else if(ch === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+    else field += ch;
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+/* Column A may arrive as 2026-11-09, 09/11/2026 or 09-11-2026 */
+function normaliseDate(s){
+  s = (s || '').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){                                   // day-first (Indian locale)
+    let d = +m[1], mo = +m[2];
+    if(d <= 12 && mo > 12){ const t = d; d = mo; mo = t; }
+    return `${m[3]}-${pad(mo)}-${pad(d)}`;
+  }
+  const p = new Date(s);
+  return isNaN(p) ? '' : key(p);
+}
+function pad(n){ return String(n).padStart(2, '0'); }
+function key(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+function looksLikePicture(s){
+  return /^https?:\/\//i.test(s) || /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(s);
+}
+function rowsToMenu(rows){
+  const menu = {};
+  for(let i = 1; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r.length) continue;
+    const k = normaliseDate(r[0]);
+    if(!k) continue;
+    const day = {};
+    for(let c = 1; c <= 6; c++){
+      const raw = (r[c] || '').trim();
+      if(!raw) continue;
+      let lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
+      if(!lines.length) continue;
+      let img = '';
+      if(lines.length > 1 && looksLikePicture(lines[lines.length - 1])){
+        img = lines.pop();
+      }
+      const en = lines[0] || '';
+      const hi = lines.length > 1 ? lines.slice(1).join(', ') : en;
+      day[c] = {en, hi, img};
+    }
+    if(Object.keys(day).length) menu[k] = day;
+  }
+  return menu;
+}
+
+/* Icons tab: column A is a name, column B is a picture file or link.
+   A name can be a meal heading (Breakfast, Dinner - Nitya ...) or a dish
+   (Poha, Besan cheela ...). Dish names are matched inside the English line. */
+function rowsToIcons(rows){
+  const map = {};
+  for(let i = 1; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || r.length < 2) continue;
+    const k = (r[0] || '').trim().toLowerCase();
+    const v = (r[1] || '').trim();
+    if(k && v) map[k] = v;
+  }
+  return map;
+}
+
+/* most specific picture wins */
+function pictureFor(meal, cell){
+  if(cell.img) return cell.img;                              // written into the cell
+  const en = (cell.en || '').toLowerCase();
+  if(ICONS[en]) return ICONS[en];                            // exact dish name
+  const dishKeys = Object.keys(ICONS)
+    .filter(k => !MEAL_KEYS.has(k))
+    .sort((a, b) => b.length - a.length);                    // longest match first
+  for(const k of dishKeys){ if(k.length > 2 && en.includes(k)) return ICONS[k]; }
+  if(ICONS[meal.key]) return ICONS[meal.key];                // meal-heading default
+  return '';
+}
+
+/* ---------------- data: cache first, then refresh -------------------- */
+let MENU = {}, ICONS = {}, isStale = false;
+
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return false;
+    const o = JSON.parse(raw);
+    if(o && o.menu){ MENU = o.menu; ICONS = o.icons || {}; isStale = true; return true; }
+  }catch(e){}
+  return false;
+}
+function saveCache(){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({menu:MENU, icons:ICONS, at:Date.now()}));
+  }catch(e){}
+}
+async function grab(url){
+  const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'cb=' + Date.now(),
+                          {cache:'no-store'});
+  if(!res.ok) throw new Error(res.status);
+  return parseCSV(await res.text());
+}
+async function refresh(){
+  let changed = false;
+  if(ICONS_CSV_URL){
+    try{
+      const map = rowsToIcons(await grab(ICONS_CSV_URL));
+      if(Object.keys(map).length){ ICONS = map; changed = true; }
+    }catch(e){ /* keep the stored pictures */ }
+  }
+  if(MENU_CSV_URL){
+    try{
+      const fresh = rowsToMenu(await grab(MENU_CSV_URL));
+      if(Object.keys(fresh).length){ MENU = fresh; isStale = false; changed = true; }
+    }catch(e){ /* keep the stored menu */ }
+  }
+  if(changed){ saveCache(); render(); }
+}
+
+/* ---------------- speech -------------------------------------------- */
+let hiVoice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  hiVoice = vs.find(v => v.lang && v.lang.toLowerCase().replace('_','-') === 'hi-in')
+         || vs.find(v => v.lang && v.lang.toLowerCase().startsWith('hi')) || null;
+  document.getElementById('note').classList.toggle('show', vs.length > 0 && !hiVoice);
+}
+speechSynthesis.addEventListener('voiceschanged', pickVoice);
+pickVoice(); setTimeout(pickVoice, 1200);
+
+let queue = [], activeEl = null;
+function clearActive(){
+  if(activeEl) activeEl.classList.remove('speaking');
+  activeEl = null;
+  document.getElementById('playall').classList.remove('speaking');
+}
+function stopAll(){ queue = []; speechSynthesis.cancel(); clearActive(); }
+function speakList(lines, el){
+  const was = activeEl;
+  stopAll();
+  if(el && was === el) return;                 // tap again to stop
+  activeEl = el; if(el) el.classList.add('speaking');
+  queue = lines.slice(); step();
+}
+function step(){
+  if(!queue.length){ clearActive(); return; }
+  const u = new SpeechSynthesisUtterance(queue.shift().replace(/\+/g, ' और '));
+  u.lang = 'hi-IN'; if(hiVoice) u.voice = hiVoice;
+  u.rate = 0.88;
+  u.onend = step; u.onerror = clearActive;
+  speechSynthesis.speak(u);
+}
+
+/* ---------------- render -------------------------------------------- */
+const DAY_MS = 86400000;
+let offset = 0;
+function shownDate(){
+  const n = new Date();
+  return new Date(new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime() + offset*DAY_MS);
+}
+
+function render(){
+  const date = shownDate(), day = MENU[key(date)] || null, isToday = offset === 0;
+  document.getElementById('dayname').textContent = DAYS_HI[date.getDay()];
+  document.getElementById('daydate').textContent = date.getDate() + '/' + (date.getMonth()+1);
+  document.getElementById('daycard').classList.toggle('is-today', isToday);
+  document.getElementById('playall-txt').textContent = isToday ? 'पूरा दिन सुनें' : 'यह दिन सुनें';
+  document.getElementById('playall').disabled = !day;
+  document.getElementById('stale').classList.toggle('show', isStale && !!day);
+
+  const wrap = document.getElementById('bands');
+  wrap.innerHTML = '';
+
+  if(!day){
+    const e = document.createElement('button');
+    e.className = 'band b-empty';
+    e.innerHTML = '<span class="txt"><span class="label">इस दिन का खाना अभी तय नहीं है</span></span>';
+    e.addEventListener('click', () => speakList(['इस दिन का खाना अभी तय नहीं है.'], e));
+    wrap.appendChild(e);
+    return;
+  }
+
+  MEALS.forEach(m => {
+    const cell = day[m.col];
+    if(!cell) return;
+    const b = document.createElement('button');
+    b.className = 'band ' + m.cls;
+
+    const photo = pictureFor(m, cell);
+    const badgePic = m.badge ? ICONS[m.badge] : '';
+    const badgeHTML = m.badge
+      ? (badgePic
+          ? `<img class="badge" src="${esc(badgePic)}" alt="" onerror="this.outerHTML='<span class=\'badge badge-em\'>${BADGE_EMOJI[m.badge]}</span>'">`
+          : `<span class="badge badge-em">${BADGE_EMOJI[m.badge]}</span>`)
+      : '';
+    const picHTML = photo
+      ? `<img class="photo" src="${esc(photo)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=\'emoji\'>${m.pic}</span>'">`
+      : `<span class="emoji">${m.pic}</span>`;
+
+    b.innerHTML =
+      `<span class="pic">${picHTML}${badgeHTML}</span>` +
+      `<span class="txt"><span class="label">${m.label}</span>` +
+      `<span class="dish">${esc(cell.hi)}</span></span><span class="spk">🔊</span>`;
+    b.addEventListener('click', () => speakList([m.label + '. ' + cell.hi], b));
+    wrap.appendChild(b);
+  });
+}
+
+function wholeDay(){
+  const date = shownDate(), day = MENU[key(date)];
+  if(!day) return;
+  const lines = [(offset === 0 ? 'आज ' : '') + DAYS_HI[date.getDay()] + ' है.'];
+  MEALS.forEach(m => { if(day[m.col]) lines.push(m.label + '. ' + day[m.col].hi + '.'); });
+  speakList(lines, document.getElementById('playall'));
+}
+
+function go(n){
+  stopAll(); offset = n; render();
+  speakList([(offset === 0 ? 'आज, ' : '') + DAYS_HI[shownDate().getDay()]], null);
+}
+document.getElementById('playall').addEventListener('click', wholeDay);
+document.getElementById('prev').addEventListener('click', () => go(offset - 1));
+document.getElementById('next').addEventListener('click', () => go(offset + 1));
+document.getElementById('daycard').addEventListener('click', () => go(0));
+
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden){ stopAll(); offset = 0; render(); refresh(); }
+});
+
+loadCache();
+render();
+refresh();
+
+/* keeps the app itself openable with no internet */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
