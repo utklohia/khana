@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<title>Setup</title>
+<meta name="theme-color" content="#14181C">
+<style>
+  :root{color-scheme:dark;box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  *,*::before,*::after{box-sizing:inherit}
+  html,body{margin:0;background:#14181C}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;
+    padding:22px 16px 40px;max-width:620px;margin:0 auto;line-height:1.5}
+  h1{font-size:23px;margin:0 0 6px}
+  p{color:#A9B4BE;font-size:15px;margin:0 0 20px}
+  label{display:block;font-size:14px;font-weight:600;margin:18px 0 6px}
+  textarea{width:100%;min-height:92px;padding:12px;border-radius:12px;border:2px solid #2A333B;
+    background:#1C2228;color:#fff;font-size:14px;font-family:ui-monospace,monospace;resize:vertical}
+  textarea:focus{outline:none;border-color:#1FA971}
+  button{width:100%;margin-top:22px;min-height:58px;border:0;border-radius:14px;
+    background:#1FA971;color:#06160F;font-size:18px;font-weight:700;cursor:pointer}
+  button:active{filter:brightness(.9)}
+  .msg{margin-top:16px;padding:13px 15px;border-radius:12px;font-size:15px;display:none}
+  .msg.ok{display:block;background:#16302A;border:2px solid #1FA971;color:#B9F0D8}
+  .msg.bad{display:block;background:#3A1414;border:2px solid #B5354B;color:#FFC9D1}
+  .note{margin-top:26px;padding:14px;border-radius:12px;background:#1C2228;
+    border:1px solid #2A333B;color:#A9B4BE;font-size:13px}
+  a{color:#1FA971}
+</style>
+</head>
+<body>
+
+<h1>Menu app setup</h1>
+<p>Do this once on each phone that should see the menu. Nothing here is stored
+on the website — the links are saved only onto this phone.</p>
+
+<label for="menu">Menu tab — published CSV link</label>
+<textarea id="menu" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&amp;single=true&amp;output=csv"></textarea>
+
+<label for="icons">Icons tab — published CSV link (optional)</label>
+<textarea id="icons" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&amp;single=true&amp;output=csv"></textarea>
+
+<button id="save">Save on this phone</button>
+<div class="msg" id="msg"></div>
+
+<div class="note">
+  To get these links: open the menu sheet in Google Sheets, then
+  <b>File &rsaquo; Share &rsaquo; Publish to web</b>. Pick the <b>Menu</b> tab,
+  choose <b>Comma-separated values (.csv)</b>, publish, and copy the link.
+  Repeat for the <b>Icons</b> tab.
+  <br><br>
+  Already set up? <a href="./index.html">Open the menu</a>.
+</div>
+
+<script>
+const CONFIG_KEY = 'menu-config-v1';
+const $ = id => document.getElementById(id);
+
+try{
+  const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+  $('menu').value  = cfg.menu  || '';
+  $('icons').value = cfg.icons || '';
+}catch(e){}
+
+function show(text, ok){
+  const m = $('msg');
+  m.textContent = text;
+  m.className = 'msg ' + (ok ? 'ok' : 'bad');
+}
+
+$('save').addEventListener('click', () => {
+  const menu  = $('menu').value.trim();
+  const icons = $('icons').value.trim();
+  if(!menu){ show('Paste the Menu link first.', false); return; }
+  if(!/^https:\/\/docs\.google\.com\//.test(menu)){
+    show('That does not look like a Google Sheets published link.', false); return;
+  }
+  if(!/output=csv/.test(menu)){
+    show('That link is not the CSV one. Choose "Comma-separated values (.csv)" when publishing.', false);
+    return;
+  }
+  if(icons && !/^https:\/\/docs\.google\.com\//.test(icons)){
+    show('The Icons link does not look right. Clear it or paste the correct one.', false); return;
+  }
+  try{
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({menu, icons}));
+  }catch(e){
+    show('This phone would not let the app save anything. Turn off private browsing and try again.', false);
+    return;
+  }
+  show('Saved. Opening the menu…', true);
+  setTimeout(() => location.href = './index.html', 900);
+});
+</script>
+</body>
+</html>

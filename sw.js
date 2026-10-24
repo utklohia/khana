@@ -1,13 +1,14 @@
 /* Keeps the app openable with no internet, and remembers dish pictures
    after they have been seen once. Bump the version numbers if you ever
    want every phone to throw away what it has stored. */
-const SHELL = 'menu-shell-v2';
-const MEDIA = 'menu-media-v2';
+const SHELL = 'menu-shell-v3';
+const MEDIA = 'menu-media-v3';
 
 const SHELL_FILES = [
   './',
   './index.html',
   './manifest.json',
+  './setup.html',
   './icon-192.png',
   './icon-512.png'
 ];

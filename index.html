@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>आज का खाना</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="theme-color" content="#14181C">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="./manifest.json">
@@ -98,8 +99,16 @@
      The Icons link is optional — without it you just get the emoji.
      ================================================================= -->
 <script>
-const MENU_CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvk3v6TcLbjUPMRFaWcJbZTAGb5pi6hqZa8B04EFyCdMQjpS0Iim0LYo6AvLmah8q0T747Sm3OKqI6/pub?gid=140964518&single=true&output=csv";
-const ICONS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSvk3v6TcLbjUPMRFaWcJbZTAGb5pi6hqZa8B04EFyCdMQjpS0Iim0LYo6AvLmah8q0T747Sm3OKqI6/pub?gid=440376587&single=true&output=csv";
+/* The sheet links are NOT stored in this file — that would make them public.
+   They are saved onto each phone once, by opening setup.html on that phone.
+   Leave both of these empty. */
+const CONFIG_KEY = 'menu-config-v1';
+let MENU_CSV_URL = '', ICONS_CSV_URL = '';
+try{
+  const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+  MENU_CSV_URL  = cfg.menu  || '';
+  ICONS_CSV_URL = cfg.icons || '';
+}catch(e){}
 </script>
 
 <div class="daybar">
@@ -130,11 +139,11 @@ const MEALS = [
   {col:1, key:'breakfast',        cls:'b-breakfast', pic:'☕',  badge:'',             label:'नाश्ता'},
   {col:2, key:'office lunch',     cls:'b-tiffin',    pic:'🍱', badge:'',             label:'ऑफिस का टिफिन'},
   {col:3, key:'home lunch',       cls:'b-home',      pic:'🍽️', badge:'',             label:'घर का खाना'},
-  {col:4, key:'dinner - utkarsh', cls:'b-dinner-a',  pic:'🌙', badge:'badge - utkarsh', label:'रात का खाना — उत्कर्ष जी'},
-  {col:5, key:'dinner - nitya',   cls:'b-dinner-b',  pic:'🌙', badge:'badge - nitya',   label:'रात का खाना — नित्या जी'},
+  {col:4, key:'dinner 1',         cls:'b-dinner-a',  pic:'🌙', badge:'badge 1',      label:'रात का खाना — सर'},
+  {col:5, key:'dinner 2',         cls:'b-dinner-b',  pic:'🌙', badge:'badge 2',      label:'रात का खाना — मैडम'},
   {col:6, key:'daily items',      cls:'b-daily',     pic:'🥥', badge:'',             label:'रोज़ का सामान'}
 ];
-const BADGE_EMOJI = {'badge - utkarsh':'👨', 'badge - nitya':'👩'};
+const BADGE_EMOJI = {'badge 1':'👨', 'badge 2':'👩'};
 const MEAL_KEYS = new Set(MEALS.map(m => m.key).concat(Object.keys(BADGE_EMOJI)));
 const DAYS_HI = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
 const CACHE_KEY = 'menu-cache-v2';
@@ -206,7 +215,7 @@ function rowsToMenu(rows){
 }
 
 /* Icons tab: column A is a name, column B is a picture file or link.
-   A name can be a meal heading (Breakfast, Dinner - Nitya ...) or a dish
+   A name can be a meal heading (Breakfast, Dinner 1 ...) or a dish
    (Poha, Besan cheela ...). Dish names are matched inside the English line. */
 function rowsToIcons(rows){
   const map = {};
